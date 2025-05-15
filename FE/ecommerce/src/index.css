@@ -1,0 +1,9 @@
+@import "bootstrap/dist/css/bootstrap.min.css";
+input:focus {
+  outline: none !important;
+  box-shadow: none !important;
+}
+.form-control, .btn{border-radius:0}
+.nav-bar-text {
+  color: #fff;
+}
