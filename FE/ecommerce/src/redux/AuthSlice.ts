@@ -1,34 +1,43 @@
-import { createSlice } from '@reduxjs/toolkit';
-let saveUser = null;
+import { createSlice } from "@reduxjs/toolkit";
+
+let savedUser = null;
+
 try {
-    const rawUser = localStorage.getItem('username');
-    saveUser = rawUser ? JSON.parse(rawUser) : null;
+  const rawUser = localStorage.getItem("username");
+  savedUser = rawUser ? JSON.parse(rawUser) : null;
+  //   if (rawUser && rawUser !== "undefined") {
+  //     savedUser = JSON.parse(rawUser);
+  //   } else {
+  //     savedUser = null;
+  //   }
 } catch (error) {
-    console.warn("Could not parse saved user from localStorage:", error);
-    saveUser = null;
+  console.error("Error parsing user from localStorage:", error);
+  savedUser = null;
 }
 
 const initialState = {
-    user: saveUser,
-    isLoggedIn: !!saveUser,
+  isLoggedIn: !!savedUser,
+  user: savedUser,
 };
 
-const userSlice = createSlice({
-    name: 'user',
-    initialState,
-    reducers: {
-        login: (state, action) => {
-            state.user = action.payload;
-            state.isLoggedIn = true;
-            localStorage.setItem('username', JSON.stringify(action.payload));
-        },
-        logout: (state) => {
-            state.user = null;
-            state.isLoggedIn = false;
-            localStorage.removeItem('username');
-        },
+const authSlice = createSlice({
+  name: "auth",
+  initialState,
+  reducers: {
+    login: (state, action) => {
+      console.log("Login action payload:", action.payload);
+      // Payload directly contains userName and password
+      state.isLoggedIn = true;
+      state.user = action.payload;
+      localStorage.setItem("username", JSON.stringify(action.payload));
     },
+    logout: (state) => {
+      state.user = null;
+      state.isLoggedIn = false;
+      localStorage.removeItem("username");
+    },
+  },
 });
 
-export const { login, logout } = userSlice.actions;
-export default userSlice.reducer;
+export const { login, logout } = authSlice.actions;
+export default authSlice.reducer;

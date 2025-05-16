@@ -1,15 +1,15 @@
 {
-    "tulipeCart": "Fr -Tulip Cart",
-    "eCommerce": "E-commerce",
-    "userName": "User Name",
-    "enterUserName": "Enter username...",
-    "password": "Password",
-    "enterPassword": "Enter password",
-    "login": "Login",
-    "register": "Register",
-    "language": "Language",
-    "productList": "Product List",
-    "addProduct": "Add Product",
-    "welcome": "Welcome",
-    "logout": "Logout"
+  "tulipCart": "Panier Tulipe",
+  "eCommerce": "E-commerce",
+  "userName": "Nom d'utilisateur",
+  "enterUserName": "Saisir le nom d'utilisateur...",
+  "password": "Mot de passe",
+  "enterPassword": "Saisir le mot de passe",
+  "login": "Connexion",
+  "register": "Inscription",
+  "language": "Langue",
+  "productList": "Liste de produits",
+  "addProduct": "Ajouter un produit",
+  "welcome": "Bienvenue",
+  "logout": "Déconnexion"
 }
