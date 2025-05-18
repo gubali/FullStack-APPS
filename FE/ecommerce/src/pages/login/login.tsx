@@ -37,7 +37,7 @@ const Login = () => {
     try {
       // setLoading(true);
       const user = { userName, role: "user" }; // Pass password as well
-      console.log("test dta" + user.userName);
+      console.log("test dta" + user);
       // Simulate async dispatch for login
       dispatch(login(user));
       navigate("/dashboard");

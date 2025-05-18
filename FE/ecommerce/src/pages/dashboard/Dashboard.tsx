@@ -1,4 +1,4 @@
-import ProductList from "../product/product-list/ProductList";
+import ProductList from "../product/products/Products";
 
 const Dashboard = ()=>{
     return (

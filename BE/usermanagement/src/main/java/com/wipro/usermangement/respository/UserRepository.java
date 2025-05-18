@@ -8,4 +8,5 @@ import com.wipro.usermangement.entity.User;
 
 public interface UserRepository extends JpaRepository<User, Integer>{
      Optional<User> findByUserName(String name);
+     
 }

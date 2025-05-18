@@ -1,6 +1,6 @@
 package com.wipro.usermangement.dto;
 
-import com.wipro.usermangement.entity.User;
+//import com.wipro.usermangement.entity.User;
 
 public class UserDto {
 	 String firstName;

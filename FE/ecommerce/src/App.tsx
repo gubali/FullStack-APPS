@@ -11,6 +11,7 @@ import Dashboard from "./pages/dashboard/Dashboard";
 import AddProduct from "./pages/product/add-product/AddProduct";
 import { useSelector } from "react-redux";
 import "./component/i18n/i18nConfig";
+import ProductList from "./pages/product/product-list/ProductList";
 interface RootState {
   auth: {
     isLoggedIn: boolean;
@@ -38,6 +39,20 @@ function App() {
             <Route
               path="/add-product"
               element={isLoggedIn ? <AddProduct /> : <Navigate to="/" />}
+            />
+            <Route
+              path="/products"
+              element={
+                isLoggedIn ? (
+                  <ProductList
+                    user={{
+                      role: "admin",
+                    }}
+                  />
+                ) : (
+                  <Navigate to="/" />
+                )
+              }
             />
           </Route>
         </Routes>

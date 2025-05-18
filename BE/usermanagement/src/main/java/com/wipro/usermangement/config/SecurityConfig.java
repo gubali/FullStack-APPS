@@ -47,10 +47,19 @@ public class SecurityConfig {
 
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
-        return http.csrf().disable().authorizeHttpRequests()
-        		.requestMatchers("/api/addUser/").permitAll()
-        		.anyRequest().authenticated().and().httpBasic()
-        		.and().sessionManagement().sessionCreationPolicy(SessionCreationPolicy.STATELESS).and().build();
-           
+        return http
+            .csrf().disable()
+            .authorizeHttpRequests()
+                .requestMatchers("/api/addUser/**").permitAll()
+                .requestMatchers("api/deleteUser/**").permitAll()       //hasRole("admin")
+                .requestMatchers("api/getAllUser/**").permitAll()
+                .requestMatchers("api/update/**").permitAll()
+                .requestMatchers("/api/login").permitAll()
+                .anyRequest().authenticated()
+            .and()
+            .httpBasic(withDefaults())
+            .sessionManagement().sessionCreationPolicy(SessionCreationPolicy.STATELESS)
+            .and()
+            .build();
     }
 }

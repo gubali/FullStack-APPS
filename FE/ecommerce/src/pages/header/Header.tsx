@@ -40,10 +40,13 @@ const Header = () => {
           >
             <Nav className="me-auto">
               <Nav.Link as={NavLink} to="dashboard">
-                {t("productList")}
+                {t("products")}
               </Nav.Link>
               <Nav.Link as={NavLink} to="/add-product">
                 {t("addProduct")}
+              </Nav.Link>
+              <Nav.Link as={NavLink} to="/products">
+               Product List
               </Nav.Link>
             </Nav>
             <div className="d-flex align-items-center">
