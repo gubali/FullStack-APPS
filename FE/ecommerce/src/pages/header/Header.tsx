@@ -48,6 +48,9 @@ const Header = () => {
               <Nav.Link as={NavLink} to="/products">
                Product List
               </Nav.Link>
+               <Nav.Link as={NavLink} to="/users">
+               User List
+              </Nav.Link>
             </Nav>
             <div className="d-flex align-items-center">
               <Navbar.Text className="me-3">
