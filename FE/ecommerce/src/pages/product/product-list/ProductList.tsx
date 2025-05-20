@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import { useState } from "react";
 import { Table, Container, Button, Modal, Form } from "react-bootstrap";
 
 interface User {
@@ -37,7 +37,9 @@ const ProductList = ({ user }: { user: User }) => {
 
   // Handle delete
   const handleDelete = (id: number) => {
-    const confirm = window.confirm("Are you sure you want to delete this product?");
+    const confirm = window.confirm(
+      "Are you sure you want to delete this product?"
+    );
     if (confirm) {
       setProducts(products.filter((prod) => prod.id !== id));
     }
@@ -46,9 +48,11 @@ const ProductList = ({ user }: { user: User }) => {
   // Save changes from modal
   const handleSave = () => {
     if (!currentProduct) return;
-    setProducts(products.map((prod) =>
-      prod.id === currentProduct.id ? currentProduct : prod
-    ));
+    setProducts(
+      products.map((prod) =>
+        prod.id === currentProduct.id ? currentProduct : prod
+      )
+    );
     setShowModal(false);
   };
 
@@ -58,7 +62,11 @@ const ProductList = ({ user }: { user: User }) => {
       <Table striped bordered hover responsive>
         <thead>
           <tr>
-            <th>ID</th><th>Name</th><th>Price ($)</th><th>Stock</th><th>Actions</th>
+            <th>ID</th>
+            <th>Name</th>
+            <th>Price ($)</th>
+            <th>Stock</th>
+            <th>Actions</th>
           </tr>
         </thead>
         <tbody>
@@ -103,7 +111,10 @@ const ProductList = ({ user }: { user: User }) => {
                 <Form.Control
                   value={currentProduct.name}
                   onChange={(e) =>
-                    setCurrentProduct({ ...currentProduct, name: e.target.value })
+                    setCurrentProduct({
+                      ...currentProduct,
+                      name: e.target.value,
+                    })
                   }
                 />
               </Form.Group>
@@ -114,7 +125,10 @@ const ProductList = ({ user }: { user: User }) => {
                   type="number"
                   value={currentProduct.price}
                   onChange={(e) =>
-                    setCurrentProduct({ ...currentProduct, price: +e.target.value })
+                    setCurrentProduct({
+                      ...currentProduct,
+                      price: +e.target.value,
+                    })
                   }
                 />
               </Form.Group>
@@ -125,7 +139,10 @@ const ProductList = ({ user }: { user: User }) => {
                   type="number"
                   value={currentProduct.stock}
                   onChange={(e) =>
-                    setCurrentProduct({ ...currentProduct, stock: +e.target.value })
+                    setCurrentProduct({
+                      ...currentProduct,
+                      stock: +e.target.value,
+                    })
                   }
                 />
               </Form.Group>
@@ -133,8 +150,12 @@ const ProductList = ({ user }: { user: User }) => {
           )}
         </Modal.Body>
         <Modal.Footer>
-          <Button variant="secondary" onClick={() => setShowModal(false)}>Cancel</Button>
-          <Button variant="primary" onClick={handleSave}>Save Changes</Button>
+          <Button variant="secondary" onClick={() => setShowModal(false)}>
+            Cancel
+          </Button>
+          <Button variant="primary" onClick={handleSave}>
+            Save Changes
+          </Button>
         </Modal.Footer>
       </Modal>
     </Container>
