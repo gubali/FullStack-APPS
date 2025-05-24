@@ -1,49 +1,48 @@
-import { Form, Button, Alert, Modal, Spinner } from "react-bootstrap";
-import { useNavigate } from "react-router-dom";
+import React, { useState } from "react";
+import { Form, Button, Spinner, Modal } from "react-bootstrap";
+import { useToast } from "../../component/toast/ToastProvider"; 
 import { useDispatch } from "react-redux";
-import { login } from "../../redux/AuthSlice";
-import { useState } from "react";
-import { useTranslation } from "react-i18next";
-import RegistrationModel from "../registration/RegistrationModel";
+import { loginUser } from "../../redux/AuthSlice";
+import type { AppDispatch } from "../../store/Store";
 import "./login.css";
+import { useNavigate } from "react-router-dom";
+import RegistrationModel from "../registration/RegistrationModel";
+import { useTranslation } from "react-i18next";
 
 const Login = () => {
   const { t } = useTranslation();
+  const { showToast } = useToast();
+  const dispatch = useDispatch<AppDispatch>();
+  const navigate = useNavigate();
+
   const [userName, setUserName] = useState("");
   const [password, setPassword] = useState("");
-  const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [show, setShow] = useState(false);
-  const dispatch = useDispatch();
-  const navigate = useNavigate();
+
   const showDialog = () => setShow(true);
   const hideDialog = () => setShow(false);
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    setError("");
-    // Basic validation for form inputs
+
     if (!userName || !password) {
-      setError(t("Please enter both username and password!"));
+      showToast(t("Please enter both username and password!"), "danger");
       return;
     }
 
-    if (password.length < 6) {
-      // Example: password validation
-      setError(t("Password must be at least 6 characters."));
+    if (password.length < 3) {
+      showToast(t("Password must be at least 6 characters."), "danger");
       return;
     }
 
     try {
-      // setLoading(true);
-      const user = { userName, role: "user" }; // Pass password as well
-      console.log("test dta" + user);
-      // Simulate async dispatch for login
-      dispatch(login(user));
+      setLoading(true);
+      await dispatch(loginUser({ userName, password })).unwrap();
       navigate("/dashboard");
-    } catch (error) {
-      console.error(error);
-      setError(t("Login failed. Please try again."));
+      showToast(t("Login successful!"), "success");
+    } catch {
+      showToast(t("Hmm, something's not right. Double-check your username and password."), "danger");
     } finally {
       setLoading(false);
     }
@@ -62,7 +61,6 @@ const Login = () => {
               placeholder={t("enterUserName")}
               value={userName}
               onChange={(e) => setUserName(e.target.value)}
-              isInvalid={!userName && !!error}
             />
           </Form.Group>
 
@@ -73,11 +71,8 @@ const Login = () => {
               placeholder={t("enterPassword")}
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              isInvalid={!password && !!error}
             />
           </Form.Group>
-
-          {error && <Alert variant="danger">{error}</Alert>}
 
           <Button
             className="w-100 mt-3"
@@ -99,7 +94,7 @@ const Login = () => {
           <Modal.Title>{t("registerNewAccount")}</Modal.Title>
         </Modal.Header>
         <Modal.Body>
-          <RegistrationModel />
+          <RegistrationModel onClose={hideDialog} />
         </Modal.Body>
       </Modal>
     </>

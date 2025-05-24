@@ -1,47 +1,71 @@
-import React, { useState, useEffect } from "react";
-import {
-  Form,
-  Button,
-  Container,
-  Row,
-  Col,
-  Alert,
-} from "react-bootstrap";
+import React, { useState } from "react";
+import { Form, Button, Container, Row, Col, Spinner } from "react-bootstrap";
 import axios from "axios";
+import { useNavigate } from "react-router-dom";
 import { BASE_URL_U } from "../../component/constant/Constant";
+import { useToast } from "../../component/toast/ToastProvider";
 
-const RegistrationModel = () => {
+interface RegistrationModelProps {
+  onClose: () => void;
+}
+
+const RegistrationModel: React.FC<RegistrationModelProps> = ({ onClose }) => {
+  const { showToast } = useToast();
+  const navigate = useNavigate();
+
+  // Form fields
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
   const [emailId, setEmailId] = useState("");
   const [userName, setUserName] = useState("");
   const [password, setPassword] = useState("");
-  const [role, setRole] = useState("");
+  const [loading, setLoading] = useState(false);
 
-  const [error, setError] = useState("");
-  const [successMessage, setSuccessMessage] = useState("");
+  // Track errors for validation
+  const [errors, setErrors] = useState<{ [key: string]: boolean }>({});
 
-  //const [showModal, setShowModal] = useState(false); // Controls modal visibility
+  const validateFields = () => {
+    const newErrors: { [key: string]: boolean } = {};
 
-  // Fetching users (if necessary for later use)
-  const fetchUsers = () => {
-    axios
-      .get(BASE_URL_U + "addUser")
-      .then((response) => {
-        console.log(response.data);
-      })
-      .catch((error) => {
-        setError(error.message || "Something went wrong");
-      });
+    if (!firstName.trim()) {
+      showToast("First name is required.", "danger");
+      newErrors.firstName = true;
+    }
+
+    if (!lastName.trim()) {
+      showToast("Last name is required.", "danger");
+      newErrors.lastName = true;
+    }
+
+    if (!emailId.trim()) {
+      showToast("Email is required.", "danger");
+      newErrors.emailId = true;
+    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(emailId)) {
+      showToast("Please enter a valid email address.", "danger");
+      newErrors.emailId = true;
+    }
+
+    if (!userName.trim()) {
+      showToast("Username is required.", "danger");
+      newErrors.userName = true;
+    }
+
+    if (!password) {
+      showToast("Password is required.", "danger");
+      newErrors.password = true;
+    } else if (password.length < 6) {
+      showToast("Password must be at least 6 characters.", "warning");
+      newErrors.password = true;
+    }
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
   };
 
-  useEffect(() => {
-    fetchUsers();
-  }, []);
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
 
-  // Form submission logic
-  const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
+    if (!validateFields()) return;
 
     const newUser = {
       firstName,
@@ -49,81 +73,97 @@ const RegistrationModel = () => {
       emailId,
       userName,
       password,
-      role,
+      role: "user",
     };
 
-    axios
-      .post(BASE_URL_U + "addUser", newUser)
-      .then(() => {
-        setSuccessMessage("User successfully registered!");
-        setFirstName("");
-        setLastName("");
-        setEmailId("");
-        setUserName("");
-        setPassword("");
-        setRole("");
-        fetchUsers();
-      })
-      .catch((error) => {
-        setError(error.message || "Error registering user");
-      });
+    setLoading(true);
+
+    try {
+      await axios.post(BASE_URL_U + "addUser", newUser);
+      showToast("User successfully registered!", "success");
+
+      // Reset fields
+      setFirstName("");
+      setLastName("");
+      setEmailId("");
+      setUserName("");
+      setPassword("");
+      setErrors({});
+      onClose();
+
+      // Redirect to login after short delay
+      setTimeout(() => navigate("/"), 1500);
+    } catch (error: unknown) {
+      if (axios.isAxiosError(error)) {
+        showToast(
+          error.response?.data?.message || "Error registering user",
+          "danger"
+        );
+      } else {
+        showToast("Error registering user", "danger");
+      }
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
-    <Container className="mt-5">
-      {/* Success and error messages */}
-      {successMessage && <Alert variant="success">{successMessage}</Alert>}
-      {error && <Alert variant="danger">{error}</Alert>}
-
-      {/* Form inside Modal */}
+    <Container className="mt-3">
       <Form onSubmit={handleSubmit}>
         <Row>
-          <Col md={6} sm={12} className="mb-3">
+          <Col md={6} className="mb-3">
             <Form.Group controlId="formFirstName">
               <Form.Label>First Name</Form.Label>
               <Form.Control
                 type="text"
-                placeholder="Enter first name"
                 value={firstName}
-                onChange={(e) => setFirstName(e.target.value)}
-                required
+                isInvalid={errors.firstName}
+                onChange={(e) => {
+                  setFirstName(e.target.value);
+                  setErrors((prev) => ({ ...prev, firstName: false }));
+                }}
               />
             </Form.Group>
           </Col>
-
-          <Col md={6} sm={12} className="mb-3">
+          <Col md={6} className="mb-3">
             <Form.Group controlId="formLastName">
               <Form.Label>Last Name</Form.Label>
               <Form.Control
                 type="text"
-                placeholder="Enter last name"
                 value={lastName}
-                onChange={(e) => setLastName(e.target.value)}
-                required
+                isInvalid={errors.lastName}
+                onChange={(e) => {
+                  setLastName(e.target.value);
+                  setErrors((prev) => ({ ...prev, lastName: false }));
+                }}
               />
             </Form.Group>
           </Col>
         </Row>
 
         <Form.Group controlId="formEmail" className="mb-3">
-          <Form.Label>Email Address</Form.Label>
+          <Form.Label>Email</Form.Label>
           <Form.Control
             type="email"
-            placeholder="Enter email"
             value={emailId}
-            onChange={(e) => setEmailId(e.target.value)}
-            required
+            isInvalid={errors.emailId}
+            onChange={(e) => {
+              setEmailId(e.target.value);
+              setErrors((prev) => ({ ...prev, emailId: false }));
+            }}
           />
         </Form.Group>
 
-        <Form.Group controlId="formUserName" className="mb-3">
+        <Form.Group controlId="formUsername" className="mb-3">
           <Form.Label>Username</Form.Label>
           <Form.Control
             type="text"
-            placeholder="Enter username"
             value={userName}
-            onChange={(e) => setUserName(e.target.value)}
-            required
+            isInvalid={errors.userName}
+            onChange={(e) => {
+              setUserName(e.target.value);
+              setErrors((prev) => ({ ...prev, userName: false }));
+            }}
           />
         </Form.Group>
 
@@ -131,31 +171,23 @@ const RegistrationModel = () => {
           <Form.Label>Password</Form.Label>
           <Form.Control
             type="password"
-            placeholder="Enter password"
+            autoComplete="off"
             value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            required
+            isInvalid={errors.password}
+            onChange={(e) => {
+              setPassword(e.target.value);
+              setErrors((prev) => ({ ...prev, password: false }));
+            }}
           />
         </Form.Group>
 
-        <Form.Group controlId="formRole" className="mb-3">
-          <Form.Label>Role</Form.Label>
-          <Form.Control
-            as="select"
-            value={role}
-            onChange={(e) => setRole(e.target.value)}
-            required
-          >
-            <option value="">Select Role</option>
-            <option value="admin">Admin</option>
-            <option value="user">User</option>
-            <option value="moderator">Moderator</option>
-          </Form.Control>
-        </Form.Group>
-
-        {/* Submit Button */}
-        <Button variant="primary" type="submit" className="mt-3 w-100">
-          Register
+        <Button
+          type="submit"
+          variant="primary"
+          className="mt-2 w-100"
+          disabled={loading}
+        >
+          {loading ? <Spinner animation="border" size="sm" /> : "Register"}
         </Button>
       </Form>
     </Container>

@@ -1,30 +1,48 @@
-import axiosIstances from "../../../component/instances/AxiosInstances";
 import { useState, useEffect, useRef } from "react";
-import ProductCard from "../../../component/card/Card";
 import { Col, Pagination, Row, Form } from "react-bootstrap";
-
-interface Product {
-  id: number;
-  title: string;
-  description: string;
-  name: string;
-  price: number;
-  image?: string;
-}
+import ProductCard from "../../../component/card/Card";
+import { axiosIstancesD } from "../../../component/instances/AxiosInstances";
+import { useToast } from "../../../component/toast/ToastProvider";
+import type { IProduct } from "../../../interface/IProduct";
 
 const Products = () => {
-  const [products, setProducts] = useState<Product[]>([]);
-  const [searchTerm, setSearchTerm] = useState<string>("");
-  const itemsPerPage = 8;
+  const [products, setProducts] = useState<IProduct[]>([]);
+  const [searchTerm, setSearchTerm] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
-  const gridRef = useRef<HTMLDivElement | null>(null);
+  const itemsPerPage = 8;
+  const gridRef = useRef<HTMLDivElement>(null);
+  const { showToast } = useToast();
 
-  const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setSearchTerm(e.target.value);
-    setCurrentPage(1); // Reset to first page on search
+  useEffect(() => {
+    const fetchProducts = async () => {
+      try {
+        const response = await axiosIstancesD.get("/products");
+        setProducts(response.data);
+      } catch (error) {
+        console.error("Error fetching products:", error);
+      }
+    };
+
+    fetchProducts();
+  }, []);
+
+  const handleSearchEvent = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    setSearchTerm(value);
+    setCurrentPage(1);
+
+    const filtered = products.filter((product) =>
+      [product.name, product.title, product.description]
+        .join(" ")
+        .toLowerCase()
+        .includes(value.toLowerCase())
+    );
+
+    if (value.trim() && filtered.length === 0) {
+      showToast("No products found", "warning");
+    }
   };
 
-  // Filter products by search term
   const filteredProducts = products.filter((product) =>
     [product.name, product.title, product.description]
       .join(" ")
@@ -39,68 +57,48 @@ const Products = () => {
 
   const totalPages = Math.ceil(filteredProducts.length / itemsPerPage);
 
-  const handlePageChange = (pageNumber: number) => {
-    setCurrentPage(pageNumber);
-    gridRef.current?.scrollIntoView({ behavior: "smooth" });
-  };
-
-  useEffect(() => {
-    const fetchProducts = async () => {
-      try {
-        const response = await axiosIstances.get("/products");
-        setProducts(response.data);
-      } catch (error) {
-        console.error("Error fetching products:", error);
-      }
-    };
-
-    fetchProducts();
-  }, []);
-
   return (
-    <>
-      <div style={{ margin: "3% 0" }}>
-        <Form className="mb-3">
-          <Form.Control
-            type="text"
-            placeholder="Search products..."
-            value={searchTerm}
-            onChange={handleSearchChange}
-          />
-        </Form>
-        <div ref={gridRef}>
-          <Row className="gx-1 gy-2">
-            {paginatedProducts.map((product) => (
-              <Col key={product.id} md={4} sm={6} lg={3}>
-                <div className="border rounded p-2 h-100 d-flex flex-column justify-content-between">
-                  <ProductCard
-                    product={{
-                      ...product,
-                      image: product.image || "https://via.placeholder.com/150",
-                    }}
-                  />
+    <div style={{ margin: "3% 0" }}>
+      <Form className="mb-3">
+        <Form.Control
+          type="text"
+          placeholder="Search products..."
+          value={searchTerm}
+          onChange={handleSearchEvent}
+        />
+      </Form>
 
-                 
-                </div>
-              </Col>
-            ))}
-          </Row>
-        </div>
-        {totalPages > 1 && (
-          <Pagination className="justify-content-center mt-4">
-            {[...Array(totalPages)].map((_, idx) => (
-              <Pagination.Item
-                key={idx + 1}
-                active={idx + 1 === currentPage}
-                onClick={() => handlePageChange(idx + 1)}
-              >
-                {idx + 1}
-              </Pagination.Item>
-            ))}
-          </Pagination>
-        )}
+      <div ref={gridRef}>
+        <Row className="gx-1 gy-2">
+          {paginatedProducts.map((product) => (
+            <Col key={product.id} md={4} sm={6} lg={3}>
+              <div className="border rounded p-2 h-100 d-flex flex-column justify-content-between">
+                <ProductCard
+                  product={{
+                    ...product,
+                    image: product.image || "https://via.placeholder.com/150",
+                  }}
+                />
+              </div>
+            </Col>
+          ))}
+        </Row>
       </div>
-    </>
+
+      {totalPages > 1 && (
+        <Pagination className="justify-content-center mt-4">
+          {Array.from({ length: totalPages }, (_, idx) => (
+            <Pagination.Item
+              key={idx + 1}
+              active={idx + 1 === currentPage}
+              onClick={() => setCurrentPage(idx + 1)}
+            >
+              {idx + 1}
+            </Pagination.Item>
+          ))}
+        </Pagination>
+      )}
+    </div>
   );
 };
 

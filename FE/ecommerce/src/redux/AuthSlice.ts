@@ -1,43 +1,80 @@
-import { createSlice } from "@reduxjs/toolkit";
-
-let savedUser = null;
-
+import {
+  createSlice,
+  createAsyncThunk,
+  type PayloadAction,
+} from "@reduxjs/toolkit";
+import axios from "axios";
+import type { IUser } from "../interface/ILoginResponse";
+import type { AuthState } from "../interface/IAuthState";
+// Load savedUser from localStorage
+let savedUser: IUser | null = null;
 try {
-  const rawUser = localStorage.getItem("username");
+  const rawUser = localStorage.getItem("user");
   savedUser = rawUser ? JSON.parse(rawUser) : null;
-  //   if (rawUser && rawUser !== "undefined") {
-  //     savedUser = JSON.parse(rawUser);
-  //   } else {
-  //     savedUser = null;
-  //   }
-} catch (error) {
-  console.error("Error parsing user from localStorage:", error);
+} catch {
   savedUser = null;
 }
 
-const initialState = {
+const initialState: AuthState = {
   isLoggedIn: !!savedUser,
   user: savedUser,
+  error: null,
 };
+
+export const loginUser = createAsyncThunk<
+  IUser,
+  { userName: string; password: string },
+  { rejectValue: string }
+>("auth/loginUser", async (credentials, thunkAPI) => {
+  try {
+    const response = await axios.post("http://localhost:9010/api/login", {
+      userName: credentials.userName,
+      password: credentials.password,
+    });
+    // eslint-disable-next-line no-debugger
+    debugger;
+    console.log("Login response:", response.data.userName);
+    const { token, role, userName } = response.data;
+    const userData = { token, role, userName };
+    console.log("User data:", userData);
+    localStorage.setItem("user", JSON.stringify(userData));
+    return userData;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  } catch (error: any) {
+    const message =
+      typeof error.response?.data?.message === "string"
+        ? error.response.data.message
+        : "Login failed";
+    return thunkAPI.rejectWithValue(message);
+  }
+});
 
 const authSlice = createSlice({
   name: "auth",
   initialState,
   reducers: {
-    login: (state, action) => {
-      console.log("Login action payload:", action.payload);
-      // Payload directly contains userName and password
-      state.isLoggedIn = true;
-      state.user = action.payload;
-      localStorage.setItem("username", JSON.stringify(action.payload));
-    },
     logout: (state) => {
       state.user = null;
       state.isLoggedIn = false;
-      localStorage.removeItem("username");
+      state.error = null;
+      localStorage.removeItem("user");
     },
+  },
+  extraReducers: (builder) => {
+    builder
+      .addCase(loginUser.pending, (state) => {
+        state.error = null;
+      })
+      .addCase(loginUser.fulfilled, (state, action: PayloadAction<IUser>) => {
+        state.user = action.payload;
+        state.isLoggedIn = true;
+        state.error = null;
+      })
+      .addCase(loginUser.rejected, (state, action) => {
+        state.error = action.payload || "Login failed";
+      });
   },
 });
 
-export const { login, logout } = authSlice.actions;
+export const { logout } = authSlice.actions;
 export default authSlice.reducer;

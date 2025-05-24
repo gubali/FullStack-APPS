@@ -95,6 +95,7 @@ public ResponseEntity<?> createAuthToken(@RequestBody AuthRequest authRequest) t
     }
 
     final UserDetails userDetails = userDetailsService.loadUserByUsername(authRequest.getUserName());
+    System.out.println("name" + userDetails.getUsername());
     final String token = jwtUtil.generateToken(userDetails.getUsername(),
             userDetails.getAuthorities().stream().findFirst().get().getAuthority());
     final String role = userDetails.getAuthorities().stream().findFirst().get().getAuthority();

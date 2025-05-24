@@ -9,4 +9,5 @@ html, body {
   letter-spacing: 0.5px;
     /* overflow: hidden;  */
     background: linear-gradient(to right, #f0f4f8, #d9e2ec);
+    cursor: pointer;
 }

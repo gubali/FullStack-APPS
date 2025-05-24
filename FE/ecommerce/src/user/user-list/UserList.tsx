@@ -6,125 +6,172 @@ import {
   Modal,
   Form,
   Alert,
-  Toast,
-  ToastContainer,
+  OverlayTrigger,
+  Tooltip,
+  Spinner,
 } from "react-bootstrap";
 import axios from "axios";
 import { BASE_URL_U } from "../../component/constant/Constant";
 import type { IUser } from "../../interface/IUser";
+import { axiosIstancesU } from "../../component/instances/AxiosInstances";
+import { useToast } from "../../component/toast/ToastProvider";
 
 interface User {
   role?: string;
 }
 
+const loaderStyle: React.CSSProperties = {
+  position: "fixed",
+  top: "50%",
+  left: "50%",
+  transform: "translate(-50%, -50%)",
+  zIndex: 9999,
+};
+
 const UserList = ({ user }: { user: User }) => {
   const [userList, setUserList] = useState<IUser[]>([]);
-  const [error, setError] = useState<string | null>(null);
+  const [saveError, setSaveError] = useState<string | null>(null);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
   const [showModal, setShowModal] = useState(false);
   const [currentUser, setCurrentUser] = useState<IUser | null>(null);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [userToDelete, setUserToDelete] = useState<IUser | null>(null);
-  const [showToast, setShowToast] = useState(false);
+  const [loading, setLoading] = useState(false);
+
+  const { showToast } = useToast();
 
   useEffect(() => {
     fetchUsers();
   }, []);
 
-  const fetchUsers = () => {
-    axios
-      .get(BASE_URL_U + "getAllUser")
-      .then((response) => {
-        setUserList(response.data);
-      })
-      .catch((error) => {
-        setError(error.message || "Something went wrong");
-      });
+  const fetchUsers = async () => {
+    setLoading(true);
+    try {
+      const response = await axiosIstancesU.get("getAllUser");
+      setUserList(response.data);
+    } catch (err: unknown) {
+      // you can optionally show a toast here on fetch error
+      showToast(
+        err instanceof Error ? err.message : "Failed to fetch users.",
+        "danger"
+      );
+    } finally {
+      setLoading(false);
+    }
   };
 
   if (user?.role !== "admin") return null;
 
-  const handleEdit = (user: IUser) => {
-    setCurrentUser(user);
+  if (loading) {
+    return (
+      <div style={loaderStyle}>
+        <Spinner animation="border" role="status" />
+      </div>
+    );
+  }
+
+  const handleEdit = (u: IUser) => {
+    setCurrentUser({ ...u });
+    setSaveError(null); // reset error when opening modal
     setShowModal(true);
   };
 
-  const confirmDelete = (user: IUser) => {
-    setUserToDelete(user);
+  const confirmDelete = (u: IUser) => {
+    setUserToDelete(u);
+    setDeleteError(null); // reset delete error
     setShowDeleteModal(true);
   };
 
-  const deleteUser = () => {
+  const deleteUser = async () => {
     if (!userToDelete) return;
-    axios
-      .delete(`${BASE_URL_U}deleteUser/${userToDelete.id}`)
-      .then(() => {
-        setUserList(userList.filter((u) => u.id !== userToDelete.id));
-        setShowDeleteModal(false);
-        setUserToDelete(null);
-      })
-      .catch((error) => {
-        alert("Delete failed: " + error.message);
-        setShowDeleteModal(false);
-      });
+    setLoading(true);
+    setDeleteError(null);
+    try {
+      await axios.delete(`${BASE_URL_U}deleteUser/${userToDelete.id}`);
+      setUserList(userList.filter((u) => u.id !== userToDelete.id));
+      setShowDeleteModal(false);
+      setUserToDelete(null);
+      showToast("User deleted successfully!", "success");
+    } catch (err: unknown) {
+      setDeleteError(
+        err instanceof Error
+          ? "Delete failed: " + err.message
+          : "Delete failed: An unknown error occurred."
+      );
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const handleSave = () => {
+  const handleSave = async () => {
     if (!currentUser) return;
-
-    axios
-      .put(`${BASE_URL_U}update/${currentUser.id}`, currentUser)
-      .then(() => {
-        fetchUsers();
-        setShowModal(false);
-        setShowToast(true); // Show toast on success
-      })
-      .catch((error) => {
-        alert("Update failed: " + error.message);
-      });
+    setLoading(true);
+    setSaveError(null);
+    try {
+      await axios.put(`${BASE_URL_U}updateUser/${currentUser.id}`, currentUser);
+      setShowModal(false);
+      showToast("User updated successfully!", "success");
+      fetchUsers();
+    } catch (err: unknown) {
+      setSaveError(
+        err instanceof Error
+          ? "Update failed: " + err.message
+          : "Update failed: An unknown error occurred."
+      );
+    } finally {
+      setLoading(false);
+    }
   };
+
+  const renderTooltip = (msg: string) => <Tooltip>{msg}</Tooltip>;
 
   return (
-    <Container className="mt-4">
+    <Container className="mt-5">
       <h2 className="mb-4">User Management</h2>
-      {error && <Alert variant="danger">{error}</Alert>}
 
-      <Table striped bordered hover responsive>
-        <thead>
+      <Table striped bordered hover responsive className="shadow-sm rounded">
+        <thead className="table-dark">
           <tr>
-            <th>ID</th>
+            <th>#</th>
             <th>First Name</th>
             <th>Last Name</th>
-            <th>Email Id</th>
-            <th>User Name</th>
+            <th>Email</th>
+            <th>Username</th>
             <th>Password</th>
-            <th>Actions</th>
+            <th>Role</th>
+            <th className="text-center">Actions</th>
           </tr>
         </thead>
         <tbody>
-          {userList.map((u) => (
+          {userList.map((u, i) => (
             <tr key={u.id}>
-              <td>{u.id}</td>
+              <td>{i + 1}</td>
               <td>{u.firstName}</td>
               <td>{u.lastName}</td>
               <td>{u.emailId}</td>
               <td>{u.userName}</td>
-              <td>{u.password}</td>
-              <td>
-                <div className="d-flex gap-2">
-                  <Button
-                    variant="warning"
-                    size="sm"
-                    onClick={() => handleEdit(u)}
-                  >
-                    Edit
-                  </Button>
-                  <Button
-                    variant="danger"
-                    size="sm"
-                    onClick={() => confirmDelete(u)}
-                  >
-                    Delete
-                  </Button>
+              <td>{u.password ? "••••••••" : "-"}</td>
+              <td>{u.role}</td>
+              <td className="text-center">
+                <div className="d-flex justify-content-center gap-2">
+                  <OverlayTrigger overlay={renderTooltip("Edit user")}>
+                    <Button
+                      variant="outline-warning"
+                      size="sm"
+                      onClick={() => handleEdit(u)}
+                    >
+                      Edit
+                    </Button>
+                  </OverlayTrigger>
+                  <OverlayTrigger overlay={renderTooltip("Delete user")}>
+                    <Button
+                      variant="outline-danger"
+                      size="sm"
+                      onClick={() => confirmDelete(u)}
+                    >
+                      Delete
+                    </Button>
+                  </OverlayTrigger>
                 </div>
               </td>
             </tr>
@@ -133,7 +180,7 @@ const UserList = ({ user }: { user: User }) => {
       </Table>
 
       {/* Edit Modal */}
-      <Modal show={showModal} onHide={() => setShowModal(false)}>
+      <Modal show={showModal} onHide={() => setShowModal(false)} centered>
         <Modal.Header closeButton>
           <Modal.Title>Edit User</Modal.Title>
         </Modal.Header>
@@ -149,7 +196,6 @@ const UserList = ({ user }: { user: User }) => {
                   }
                 />
               </Form.Group>
-
               <Form.Group className="mb-3">
                 <Form.Label>Last Name</Form.Label>
                 <Form.Control
@@ -159,7 +205,6 @@ const UserList = ({ user }: { user: User }) => {
                   }
                 />
               </Form.Group>
-
               <Form.Group className="mb-3">
                 <Form.Label>Email</Form.Label>
                 <Form.Control
@@ -170,7 +215,6 @@ const UserList = ({ user }: { user: User }) => {
                   }
                 />
               </Form.Group>
-
               <Form.Group className="mb-3">
                 <Form.Label>Username</Form.Label>
                 <Form.Control
@@ -180,7 +224,6 @@ const UserList = ({ user }: { user: User }) => {
                   }
                 />
               </Form.Group>
-
               <Form.Group className="mb-3">
                 <Form.Label>Password</Form.Label>
                 <Form.Control
@@ -191,57 +234,101 @@ const UserList = ({ user }: { user: User }) => {
                   }
                 />
               </Form.Group>
+              <Form.Group className="mb-3">
+                <Form.Label>Role</Form.Label>
+                <Form.Control
+                disabled={true}
+                  value={currentUser.role}
+                  onChange={(e) =>
+                    setCurrentUser({ ...currentUser, role: e.target.value })
+                  }
+                />
+              </Form.Group>
             </Form>
           )}
-        </Modal.Body>
-        <Modal.Footer>
-          <Button variant="secondary" onClick={() => setShowModal(false)}>
-            Cancel
-          </Button>
-          <Button variant="primary" onClick={handleSave}>
-            Save Changes
-          </Button>
-        </Modal.Footer>
-      </Modal>
-
-      {/* Delete Modal */}
-      <Modal show={showDeleteModal} onHide={() => setShowDeleteModal(false)} centered>
-        <Modal.Header closeButton>
-          <Modal.Title>Confirm Deletion</Modal.Title>
-        </Modal.Header>
-        <Modal.Body>
-          {userToDelete && (
-            <p>
-              Are you sure you want to delete user{" "}
-              <strong>{userToDelete.userName}</strong>?
-            </p>
+          {/* Save error shown here only */}
+          {saveError && (
+            <Alert
+              variant="danger"
+              dismissible
+              onClose={() => setSaveError(null)}
+            >
+              {saveError}
+            </Alert>
           )}
         </Modal.Body>
         <Modal.Footer>
-          <Button variant="secondary" onClick={() => setShowDeleteModal(false)}>
+          <Button
+            variant="secondary"
+            onClick={() => setShowModal(false)}
+            disabled={loading}
+          >
             Cancel
           </Button>
-          <Button variant="danger" onClick={deleteUser}>
-            Delete
+          <Button variant="primary" onClick={handleSave} disabled={loading}>
+            {loading ? (
+              <>
+                <Spinner
+                  as="span"
+                  animation="border"
+                  size="sm"
+                  role="status"
+                  aria-hidden="true"
+                />{" "}
+                Saving...
+              </>
+            ) : (
+              "Save Changes"
+            )}
           </Button>
         </Modal.Footer>
       </Modal>
 
-      {/* Toast Notification */}
-      <ToastContainer position="bottom-end" className="p-3">
-        <Toast
-          show={showToast}
-          onClose={() => setShowToast(false)}
-          delay={3000}
-          autohide
-          bg="success"
-        >
-          <Toast.Header>
-            <strong className="me-auto">Update Successful</strong>
-          </Toast.Header>
-          <Toast.Body className="text-white">User updated successfully!</Toast.Body>
-        </Toast>
-      </ToastContainer>
+      {/* Delete Confirmation Modal */}
+      <Modal show={showDeleteModal} onHide={() => setShowDeleteModal(false)} centered>
+        <Modal.Header closeButton>
+          <Modal.Title>Confirm Delete</Modal.Title>
+        </Modal.Header>
+        <Modal.Body>
+          Are you sure you want to delete user{" "}
+          <strong>{userToDelete?.userName}</strong>?
+          {deleteError && (
+            <Alert
+              variant="danger"
+              dismissible
+              onClose={() => setDeleteError(null)}
+              className="mt-3"
+            >
+              {deleteError}
+            </Alert>
+          )}
+        </Modal.Body>
+        <Modal.Footer>
+          <Button
+            variant="secondary"
+            onClick={() => setShowDeleteModal(false)}
+            disabled={loading}
+          >
+            Cancel
+          </Button>
+          <Button variant="danger" onClick={deleteUser} disabled={loading}>
+            {loading ? (
+              <>
+                <Spinner
+                  as="span"
+                  animation="border"
+                  size="sm"
+                  role="status"
+                  aria-hidden="true"
+                />{" "}
+                Deleting...
+              </>
+            ) : (
+              "Delete"
+            )}
+          </Button>
+        </Modal.Footer>
+      </Modal>
     </Container>
   );
 };
