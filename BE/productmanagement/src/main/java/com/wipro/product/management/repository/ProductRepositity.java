@@ -1,5 +1,9 @@
 package com.wipro.product.management.repository;
 
-public interface ProductRepositity {
+import org.springframework.data.jpa.repository.JpaRepository;
+
+import com.wipro.product.management.entity.Product;
+
+public interface ProductRepositity extends JpaRepository<Product, Integer> {
 
 }

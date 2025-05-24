@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { Col, Pagination, Row, Form } from "react-bootstrap";
 import ProductCard from "../../../component/card/Card";
-import { axiosIstancesD } from "../../../component/instances/AxiosInstances";
+import { axiosIstancesP } from "../../../component/instances/AxiosInstances";
 import { useToast } from "../../../component/toast/ToastProvider";
 import type { IProduct } from "../../../interface/IProduct";
 
@@ -16,7 +16,7 @@ const Products = () => {
   useEffect(() => {
     const fetchProducts = async () => {
       try {
-        const response = await axiosIstancesD.get("/products");
+        const response = await axiosIstancesP.get("/products");
         setProducts(response.data);
       } catch (error) {
         console.error("Error fetching products:", error);
@@ -77,6 +77,7 @@ const Products = () => {
                   product={{
                     ...product,
                     image: product.image || "https://via.placeholder.com/150",
+                    stock: product.stock,
                   }}
                 />
               </div>

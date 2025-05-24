@@ -10,6 +10,7 @@
   "language": "Language",
   "products": "Products List",
   "addProduct": "Add Product",
+  "dashboard":"Dashboard",
   "welcome": "Welcome",
   "logout": "Logout",
   "registerNewAccount": "Register New Account"

@@ -1,5 +1,5 @@
 import axios from "axios";
-import { BASE_URL_D, BASE_URL_U } from "../constant/Constant";
+import { BASE_URL_P, BASE_URL_U } from "../constant/Constant";
 
 export const axiosIstancesU = axios.create({
   baseURL: BASE_URL_U,
@@ -8,8 +8,8 @@ export const axiosIstancesU = axios.create({
   },
 });
 
-export const axiosIstancesD = axios.create({
-  baseURL: BASE_URL_D,
+export const axiosIstancesP = axios.create({
+  baseURL: BASE_URL_P,
   headers: {
     "Content-Type": "application/json",
   },
